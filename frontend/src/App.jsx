@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 
@@ -73,11 +73,40 @@ const MemberRoute = ({ children }) => {
   return <Layout>{children}</Layout>;
 };
 
+// Component to detect #admin in URL and navigate to login page or admin page
+const HashRedirectHandler = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, isAdmin } = useAuth();
+
+  React.useEffect(() => {
+    const handleHash = () => {
+      const hash = (window.location.hash || location.hash || '').toLowerCase();
+      if (hash === '#admin' || hash === '#/admin') {
+        if (isAuthenticated && isAdmin) {
+          navigate('/admin', { replace: true });
+        } else {
+          if (location.pathname !== '/login' || location.hash !== '#admin') {
+            navigate('/login#admin', { replace: true });
+          }
+        }
+      }
+    };
+
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, [location, navigate, isAuthenticated, isAdmin]);
+
+  return null;
+};
+
 function App() {
   return (
     <AuthProvider>
       <CartProvider>
         <Router>
+          <HashRedirectHandler />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
