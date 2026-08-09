@@ -87,7 +87,7 @@ const LandingPage = () => {
             <Link to="/register" className="btn btn-primary btn-lg">
               Get Started as Member <ArrowRight size={18} />
             </Link>
-            <Link to="/login" className="btn btn-secondary btn-lg">
+            <Link to="/login#admin" className="btn btn-secondary btn-lg">
               Admin Login Portal
             </Link>
           </div>
