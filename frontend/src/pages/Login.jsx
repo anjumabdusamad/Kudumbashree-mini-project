@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock, Mail, AlertTriangle } from 'lucide-react';
+import { Lock, Mail, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -11,6 +11,16 @@ const Login = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isAdminMode = location.hash === '#admin' || window.location.hash === '#admin' || window.location.hash === '#/admin';
+
+  useEffect(() => {
+    if (isAdminMode) {
+      setEmail('admin@gmail.com');
+      setPassword('adminpassword');
+    }
+  }, [isAdminMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,7 +61,9 @@ const Login = () => {
             width: '48px',
             height: '48px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+            background: isAdminMode 
+              ? 'linear-gradient(135deg, #10b981, #059669)'
+              : 'linear-gradient(135deg, var(--primary), var(--secondary))',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -59,10 +71,21 @@ const Login = () => {
             fontSize: '1.4rem',
             color: '#fff',
             marginBottom: '0.75rem'
-          }}>K</div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', color: '#fff' }}>Welcome Back</h2>
+          }}>
+            {isAdminMode ? <ShieldCheck size={26} /> : 'K'}
+          </div>
+          {isAdminMode && (
+            <div>
+              <span className="badge badge-success mb-2" style={{ display: 'inline-block', fontSize: '0.8rem', padding: '0.25rem 0.75rem' }}>
+                Admin Access
+              </span>
+            </div>
+          )}
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', color: '#fff' }}>
+            {isAdminMode ? 'Admin Portal Login' : 'Welcome Back'}
+          </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            Login to access your Kudumbashree portal
+            {isAdminMode ? 'Enter credentials to access System Administration' : 'Login to access your Kudumbashree portal'}
           </p>
         </div>
 
@@ -132,6 +155,28 @@ const Login = () => {
           <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600 }}>
             Register here
           </Link>
+        </div>
+
+        <div style={{
+          marginTop: '1.5rem',
+          padding: '1rem',
+          borderRadius: '8px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          fontSize: '0.85rem',
+          textAlign: 'left'
+        }}>
+          <h4 style={{ color: '#fff', marginBottom: '0.75rem', fontWeight: 600, fontSize: '0.9rem' }}>Demo Credentials:</h4>
+          <div style={{ marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>
+            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>Admin:</span>
+            <div style={{ marginTop: '0.25rem' }}>Email: <code>admin@gmail.com</code></div>
+            <div>Password: <code>adminpassword</code></div>
+          </div>
+          <div style={{ color: 'var(--text-secondary)' }}>
+            <span style={{ fontWeight: 600, color: 'var(--secondary)' }}>Member:</span>
+            <div style={{ marginTop: '0.25rem' }}>Email: <code>member@gmail.com</code></div>
+            <div>Password: <code>memberpassword</code></div>
+          </div>
         </div>
       </div>
     </div>
