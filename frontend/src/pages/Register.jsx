@@ -35,11 +35,12 @@ const Register = () => {
     const fetchNhgs = async () => {
       try {
         const res = await axios.get('http://localhost:5000/api/auth/nhgs');
-        if (res.data.success) {
+        if (res.data.success && res.data.nhgs.length > 0) {
           setNhgs(res.data.nhgs);
-          if (res.data.nhgs.length > 0) {
-            setFormData(prev => ({ ...prev, nhgId: res.data.nhgs[0]._id }));
-          }
+          setFormData(prev => ({ 
+            ...prev, 
+            nhgId: res.data.nhgs.some(n => n._id === prev.nhgId) ? prev.nhgId : res.data.nhgs[0]._id 
+          }));
         }
       } catch (err) {
         console.error('Error fetching NHGs for registration:', err);
@@ -172,26 +173,6 @@ const Register = () => {
         {!verificationStep ? (
           /* Step 1: Info Form */
           <form onSubmit={handleSubmit}>
-            {/* Role selection tabs */}
-            <div className="flex gap-1 mb-4" style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.3rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--dark-border)' }}>
-              <button
-                type="button"
-                className={`btn btn-sm ${formData.role === 'member' ? 'btn-primary' : 'btn-dark'}`}
-                style={{ flex: 1 }}
-                onClick={() => setFormData(prev => ({ ...prev, role: 'member' }))}
-              >
-                Member
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm ${formData.role === 'admin' ? 'btn-primary' : 'btn-dark'}`}
-                style={{ flex: 1 }}
-                onClick={() => setFormData(prev => ({ ...prev, role: 'admin' }))}
-              >
-                Administrator
-              </button>
-            </div>
-
             <div className="form-group">
               <label className="form-label">Full Name</label>
               <div style={{ position: 'relative' }}>
@@ -268,54 +249,30 @@ const Register = () => {
               </div>
             </div>
 
-            {formData.role === 'member' ? (
-              <div className="form-group">
-                <label className="form-label">Select NHG (Neighborhood Group)</label>
-                {loadingNhgs ? (
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Loading NHG list...</div>
-                ) : nhgs.length === 0 ? (
-                  <div className="text-danger" style={{ fontSize: '0.85rem' }}>
-                    No active NHGs found. Please contact Administrator.
-                  </div>
-                ) : (
-                  <select
-                    name="nhgId"
-                    className="form-control form-select"
-                    value={formData.nhgId}
-                    onChange={handleChange}
-                    required
-                  >
-                    {nhgs.map((nhg) => (
-                      <option key={nhg._id} value={nhg._id}>
-                        {nhg.name} ({nhg.location})
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            ) : (
-              <div className="form-group">
-                <label className="form-label">Admin Secret Key</label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-                    <ShieldAlert size={18} />
-                  </span>
-                  <input
-                    type="password"
-                    name="adminSecret"
-                    className="form-control"
-                    style={{ paddingLeft: '2.75rem' }}
-                    placeholder="Enter key to verify admin privileges"
-                    value={formData.adminSecret}
-                    onChange={handleChange}
-                    required
-                  />
+            <div className="form-group">
+              <label className="form-label">Select NHG (Neighborhood Group)</label>
+              {loadingNhgs ? (
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Loading NHG list...</div>
+              ) : nhgs.length === 0 ? (
+                <div className="text-danger" style={{ fontSize: '0.85rem' }}>
+                  No active NHGs found. Please contact Administrator.
                 </div>
-                <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
-                  For demo setup, use: <code>KUDUMBA_ADMIN_2026</code>
-                </small>
-              </div>
-            )}
+              ) : (
+                <select
+                  name="nhgId"
+                  className="form-control form-select"
+                  value={formData.nhgId}
+                  onChange={handleChange}
+                  required
+                >
+                  {nhgs.map((nhg) => (
+                    <option key={nhg._id} value={nhg._id}>
+                      {nhg.name} ({nhg.location})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
 
             <button
               type="submit"
