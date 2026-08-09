@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.post(`${API_URL}/verify-otp`, { email, otp });
+      const res = await axios.post(`${API_URL}/auth/verify-otp`, { email, otp });
       if (res.data.success) {
         if (res.data.token) {
           localStorage.setItem('token', res.data.token);
