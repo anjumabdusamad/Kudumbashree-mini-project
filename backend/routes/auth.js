@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
@@ -78,11 +79,25 @@ router.post('/register', async (req, res) => {
       userRole = 'admin';
     } else {
       if (nhgId) {
-        const nhgExists = await NHG.findById(nhgId);
-        if (!nhgExists) {
-          return res.status(404).json({ success: false, message: 'Selected NHG not found' });
+        let nhgExists = null;
+        if (mongoose.Types.ObjectId.isValid(nhgId)) {
+          nhgExists = await NHG.findById(nhgId);
         }
-        assignedNhg = nhgId;
+        if (!nhgExists) {
+          // Fallback to first active NHG if provided ID is stale/invalid
+          nhgExists = await NHG.findOne({ status: 'active' });
+        }
+        if (nhgExists) {
+          assignedNhg = nhgExists._id;
+        } else {
+          return res.status(404).json({ success: false, message: 'No active NHG units found in system. Please contact Administrator.' });
+        }
+      } else {
+        // If no nhgId provided, assign first active NHG
+        const defaultNhg = await NHG.findOne({ status: 'active' });
+        if (defaultNhg) {
+          assignedNhg = defaultNhg._id;
+        }
       }
     }
 
@@ -128,8 +143,8 @@ router.post('/register', async (req, res) => {
       email,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    console.error('Registration Error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Server Error' });
   }
 });
 
@@ -144,7 +159,7 @@ router.post('/verify-otp', async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ email }).populate('nhg', 'name code');
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -154,7 +169,7 @@ router.post('/verify-otp', async (req, res) => {
     }
 
     // Check OTP and expiration
-    if (user.otp !== otp || user.otpExpire < Date.now()) {
+    if (String(user.otp) !== String(otp) || !user.otpExpire || new Date(user.otpExpire).getTime() < Date.now()) {
       return res.status(400).json({ success: false, message: 'Invalid or expired verification code' });
     }
 
@@ -172,15 +187,16 @@ router.post('/verify-otp', async (req, res) => {
 
     await user.save();
 
-    // If member is registered with NHG, add user to NHG members array (now that they are verified)
-    if (user.role === 'member' && user.nhg) {
-      await NHG.findByIdAndUpdate(user.nhg._id, {
+    // If member is registered with NHG, add user to NHG members array
+    if (user.role === 'member' && user.nhg && mongoose.Types.ObjectId.isValid(user.nhg)) {
+      await NHG.findByIdAndUpdate(user.nhg, {
         $addToSet: { members: user._id },
       });
     }
 
     // Return token directly for approved users (Admins)
     if (userStatus === 'approved') {
+      await user.populate('nhg', 'name code');
       const token = generateToken(user._id);
       return res.status(200).json({
         success: true,
@@ -205,8 +221,8 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    console.error('Verify OTP Error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Server Error' });
   }
 });
 
@@ -228,8 +244,8 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    // Verify email verification state
-    if (!user.isVerified) {
+    // Verify email verification state (admins are verified by default)
+    if (!user.isVerified && user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Your email address is not verified. Please verify using the OTP sent to your email during registration.',
