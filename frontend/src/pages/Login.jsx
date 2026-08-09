@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock, Mail, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, AlertTriangle, ShieldCheck, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -55,8 +55,26 @@ const Login = () => {
       padding: '2rem 1rem',
       background: 'var(--dark-bg)'
     }}>
-      <div className="glass-card" style={{ width: '100%', maxWidth: '420px', padding: '2.5rem 2rem' }}>
-        <div className="text-center mb-4">
+      <div className="glass-card" style={{ width: '100%', maxWidth: '420px', padding: '2.5rem 2rem', position: 'relative' }}>
+        <button 
+          onClick={() => navigate('/')}
+          className="btn btn-dark btn-sm"
+          style={{ 
+            position: 'absolute', 
+            top: '1rem', 
+            left: '1rem', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.25rem',
+            padding: '0.25rem 0.75rem',
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: 'var(--text-secondary)'
+          }}
+        >
+          <ArrowLeft size={16} /> Back
+        </button>
+        <div className="text-center mb-4 mt-3">
           <div style={{
             width: '48px',
             height: '48px',
