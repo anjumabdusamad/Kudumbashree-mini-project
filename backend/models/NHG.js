@@ -36,9 +36,21 @@ const NHGSchema = new mongoose.Schema({
       ref: 'User',
     },
   ],
+  contactPerson: {
+    type: String,
+    default: null,
+  },
+  phone: {
+    type: String,
+    default: null,
+  },
+  email: {
+    type: String,
+    default: null,
+  },
   status: {
     type: String,
-    enum: ['active', 'inactive'],
+    enum: ['active', 'inactive', 'pending'],
     default: 'active',
   },
   createdAt: {
