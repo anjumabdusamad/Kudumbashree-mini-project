@@ -33,6 +33,7 @@ const seedData = async () => {
       phone: '9876543210',
       role: 'admin',
       status: 'approved',
+      isVerified: true,
     });
     console.log('Admin User Created:', admin.email);
 
@@ -45,6 +46,7 @@ const seedData = async () => {
       role: 'member',
       nhg: nhg1._id,
       status: 'approved',
+      isVerified: true,
       savingsBalance: 1250, // Starter savings
     });
     console.log('Approved Member Created:', approvedMember.email);
