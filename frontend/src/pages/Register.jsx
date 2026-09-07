@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { User as UserIcon, Mail, Phone, Lock, Eye, ShieldAlert, CheckCircle2, KeyRound, ArrowLeft } from 'lucide-react';
+import { User as UserIcon, Mail, Phone, Lock, Eye, ShieldAlert, CheckCircle2, KeyRound } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -130,26 +130,8 @@ const Register = () => {
       padding: '2rem 1rem',
       background: 'var(--dark-bg)'
     }}>
-      <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem 2rem', position: 'relative' }}>
-        <button 
-          onClick={() => navigate('/')}
-          className="btn btn-dark btn-sm"
-          style={{ 
-            position: 'absolute', 
-            top: '1rem', 
-            left: '1rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.25rem',
-            padding: '0.25rem 0.75rem',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: 'var(--text-secondary)'
-          }}
-        >
-          <ArrowLeft size={16} /> Back
-        </button>
-        <div className="text-center mb-4 mt-3">
+      <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem 2rem' }}>
+        <div className="text-center mb-4">
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', color: '#fff' }}>
             {!verificationStep ? 'Join Kudumbashree' : 'Verify Email Address'}
           </h2>
