@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Calendar, Plus, Users, ShieldAlert, CheckCircle, Clock, MapPin } from 'lucide-react';
+import { Calendar, Plus, Users, ShieldAlert, CheckCircle, Clock, MapPin, FileText } from 'lucide-react';
+import { generateMeetingReport } from '../utils/pdfGenerator';
 
 const MeetingManager = () => {
   const [nhgs, setNhgs] = useState([]);
@@ -388,9 +389,18 @@ const MeetingManager = () => {
                         </div>
                       </td>
                       <td>
-                        <div className="flex justify-center">
+                        <div className="flex justify-center gap-1">
+                          <button
+                            className="btn btn-dark btn-sm flex align-center gap-1"
+                            onClick={() => generateMeetingReport(meeting)}
+                            title="Download PDF Minutes"
+                            style={{ borderColor: 'rgba(16,185,129,0.4)', color: '#10b981' }}
+                          >
+                            <FileText size={14} />
+                            <span>PDF</span>
+                          </button>
                           <button className="btn btn-dark btn-sm" onClick={() => handleSelectMeetingForAttendance(meeting)}>
-                            Record / Edit Attendance
+                            Record Attendance
                           </button>
                         </div>
                       </td>

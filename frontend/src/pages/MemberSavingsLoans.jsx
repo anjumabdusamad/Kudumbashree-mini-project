@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Landmark, CreditCard, ShieldAlert, CheckCircle, ArrowUpRight, Coins, Calendar, FileText } from 'lucide-react';
+import { generateFinancialReport } from '../utils/pdfGenerator';
 
 const MemberSavingsLoans = () => {
   const { user } = useAuth();
@@ -131,8 +132,21 @@ const MemberSavingsLoans = () => {
 
   return (
     <div>
-      <h1 className="mb-1" style={{ fontSize: '2rem' }}>Savings & Loans Hub</h1>
-      <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>Track your weekly savings deposits, active micro-finance credit files, and payments</p>
+      <div className="flex justify-between align-center mb-4 flex-wrap gap-2">
+        <div>
+          <h1 className="mb-1" style={{ fontSize: '2rem' }}>Savings & Loans Hub</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Track your weekly savings deposits, active micro-finance credit files, and payments</p>
+        </div>
+
+        <button
+          className="btn btn-primary flex align-center gap-1"
+          onClick={() => generateFinancialReport(user, savings, loans)}
+          style={{ background: '#10b981', borderColor: '#10b981' }}
+        >
+          <FileText size={18} />
+          <span>Download PDF Statement</span>
+        </button>
+      </div>
 
       {message && (
         <div className="flex align-center gap-1 mb-4" style={{
