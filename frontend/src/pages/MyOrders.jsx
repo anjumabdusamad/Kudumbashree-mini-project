@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { ShoppingCart, CheckCircle, ShieldAlert, Package, Calendar } from 'lucide-react';
+import { ShoppingCart, CheckCircle, ShieldAlert, Package, Calendar, FileText } from 'lucide-react';
+import { generateOrderInvoice } from '../utils/pdfGenerator';
 
 const MyOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -102,7 +103,7 @@ const MyOrders = () => {
                   <th>Price Total</th>
                   <th>Shipping Destination</th>
                   <th>Fulfillment Status</th>
-                  <th className="text-center">Action</th>
+                  <th className="text-center">Invoice & Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -138,16 +139,23 @@ const MyOrders = () => {
                       </span>
                     </td>
                     <td>
-                      <div className="flex justify-center">
-                        {order.status === 'pending' ? (
+                      <div className="flex justify-center gap-1">
+                        <button
+                          className="btn btn-dark btn-sm flex align-center gap-1"
+                          onClick={() => generateOrderInvoice(order)}
+                          title="Download PDF Invoice"
+                          style={{ borderColor: 'rgba(16,185,129,0.4)', color: '#10b981' }}
+                        >
+                          <FileText size={14} />
+                          <span>PDF</span>
+                        </button>
+                        {order.status === 'pending' && (
                           <button
                             className="btn btn-danger btn-sm"
                             onClick={() => handleCancelOrder(order._id)}
                           >
-                            Cancel Order
+                            Cancel
                           </button>
-                        ) : (
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Locked</span>
                         )}
                       </div>
                     </td>
