@@ -11,9 +11,14 @@ connectDB();
 
 const app = express();
 
+const path = require('path');
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static uploads folder
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Set up a simple welcome route
 app.get('/api', (req, res) => {
@@ -31,6 +36,7 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api/trainings', require('./routes/trainings'));
 app.use('/api/schemes', require('./routes/schemes'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/upload', require('./routes/upload'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
