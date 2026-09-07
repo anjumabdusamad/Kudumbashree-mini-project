@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   LayoutDashboard, 
   UserCheck, 
@@ -17,6 +18,7 @@ import {
 
 const Sidebar = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   
   if (!user) return null;
   
@@ -45,39 +47,39 @@ const Sidebar = () => {
           <>
             <NavLink to="/admin" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <LayoutDashboard size={18} />
-              <span>Dashboard</span>
+              <span>{t('dashboard')}</span>
             </NavLink>
             <NavLink to="/admin/member-approval" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <UserCheck size={18} />
-              <span>Approvals</span>
+              <span>{t('menuMembers')}</span>
             </NavLink>
             <NavLink to="/admin/nhg-manager" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <Users size={18} />
-              <span>NHG Manager</span>
+              <span>{t('menuNHG')}</span>
             </NavLink>
             <NavLink to="/admin/meeting-manager" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <Calendar size={18} />
-              <span>Meetings</span>
+              <span>{t('menuMeetings')}</span>
             </NavLink>
             <NavLink to="/admin/financial-tracker" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <Coins size={18} />
-              <span>Savings & Loans</span>
+              <span>{t('menuSavingsLoans')}</span>
             </NavLink>
             <NavLink to="/admin/training-manager" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <GraduationCap size={18} />
-              <span>Trainings</span>
+              <span>{t('menuTrainings')}</span>
             </NavLink>
             <NavLink to="/admin/scheme-manager" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <FileText size={18} />
-              <span>Welfare Schemes</span>
+              <span>{t('menuSchemes')}</span>
             </NavLink>
             <NavLink to="/admin/product-manager" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <ShoppingBag size={18} />
-              <span>Product Manager</span>
+              <span>{t('menuProducts')}</span>
             </NavLink>
             <NavLink to="/admin/orders" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <ShoppingCart size={18} />
-              <span>Orders</span>
+              <span>{t('menuOrders')}</span>
             </NavLink>
           </>
         ) : (
@@ -85,39 +87,39 @@ const Sidebar = () => {
           <>
             <NavLink to="/member" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <LayoutDashboard size={18} />
-              <span>Dashboard</span>
+              <span>{t('dashboard')}</span>
             </NavLink>
             <NavLink to="/member/profile" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <User size={18} />
-              <span>My Profile</span>
+              <span>{t('profile')}</span>
             </NavLink>
             <NavLink to="/member/meetings" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <Calendar size={18} />
-              <span>Meetings</span>
+              <span>{t('menuMeetings')}</span>
             </NavLink>
             <NavLink to="/member/savings-loans" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <Coins size={18} />
-              <span>Savings & Loans</span>
+              <span>{t('menuSavingsLoans')}</span>
             </NavLink>
             <NavLink to="/member/trainings" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <GraduationCap size={18} />
-              <span>Trainings</span>
+              <span>{t('menuTrainings')}</span>
             </NavLink>
             <NavLink to="/member/schemes" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <FileText size={18} />
-              <span>Welfare Schemes</span>
+              <span>{t('menuSchemes')}</span>
             </NavLink>
             <NavLink to="/member/shop" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <ShoppingBag size={18} />
-              <span>Shop</span>
+              <span>{t('menuShop')}</span>
             </NavLink>
             <NavLink to="/member/my-orders" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <ShoppingCart size={18} />
-              <span>My Orders</span>
+              <span>{t('menuMyOrders')}</span>
             </NavLink>
             <NavLink to="/member/notifications" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
               <Bell size={18} />
-              <span>Notifications</span>
+              <span>{t('menuNotifications')}</span>
             </NavLink>
           </>
         )}
@@ -125,7 +127,7 @@ const Sidebar = () => {
 
       <div className="sidebar-footer">
         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          Logged in as:
+          {t('welcome')}:
         </div>
         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
           {isAdmin ? 'System Admin' : 'NHG Member'}

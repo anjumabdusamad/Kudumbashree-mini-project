@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { LanguageProvider } from './context/LanguageContext';
 
 import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
@@ -103,45 +104,47 @@ const HashRedirectHandler = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Router>
-          <HashRedirectHandler />
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+    <LanguageProvider>
+      <AuthProvider>
+        <CartProvider>
+          <Router>
+            <HashRedirectHandler />
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* Admin Protected Routes */}
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/member-approval" element={<AdminRoute><MemberApproval /></AdminRoute>} />
-            <Route path="/admin/nhg-manager" element={<AdminRoute><NHGManager /></AdminRoute>} />
-            <Route path="/admin/meeting-manager" element={<AdminRoute><MeetingManager /></AdminRoute>} />
-            <Route path="/admin/financial-tracker" element={<AdminRoute><FinancialTracker /></AdminRoute>} />
-            <Route path="/admin/training-manager" element={<AdminRoute><TrainingManager /></AdminRoute>} />
-            <Route path="/admin/scheme-manager" element={<AdminRoute><SchemeManager /></AdminRoute>} />
-            <Route path="/admin/product-manager" element={<AdminRoute><ProductManager /></AdminRoute>} />
-            <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+              {/* Admin Protected Routes */}
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/member-approval" element={<AdminRoute><MemberApproval /></AdminRoute>} />
+              <Route path="/admin/nhg-manager" element={<AdminRoute><NHGManager /></AdminRoute>} />
+              <Route path="/admin/meeting-manager" element={<AdminRoute><MeetingManager /></AdminRoute>} />
+              <Route path="/admin/financial-tracker" element={<AdminRoute><FinancialTracker /></AdminRoute>} />
+              <Route path="/admin/training-manager" element={<AdminRoute><TrainingManager /></AdminRoute>} />
+              <Route path="/admin/scheme-manager" element={<AdminRoute><SchemeManager /></AdminRoute>} />
+              <Route path="/admin/product-manager" element={<AdminRoute><ProductManager /></AdminRoute>} />
+              <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
 
-            {/* Member Protected Routes */}
-            <Route path="/member" element={<MemberRoute><MemberDashboard /></MemberRoute>} />
-            <Route path="/member/profile" element={<MemberRoute><Profile /></MemberRoute>} />
-            <Route path="/member/meetings" element={<MemberRoute><MemberMeetings /></MemberRoute>} />
-            <Route path="/member/savings-loans" element={<MemberRoute><MemberSavingsLoans /></MemberRoute>} />
-            <Route path="/member/trainings" element={<MemberRoute><MemberTrainings /></MemberRoute>} />
-            <Route path="/member/schemes" element={<MemberRoute><MemberSchemes /></MemberRoute>} />
-            <Route path="/member/shop" element={<MemberRoute><Shop /></MemberRoute>} />
-            <Route path="/member/cart" element={<MemberRoute><Cart /></MemberRoute>} />
-            <Route path="/member/my-orders" element={<MemberRoute><MyOrders /></MemberRoute>} />
-            <Route path="/member/notifications" element={<MemberRoute><Notifications /></MemberRoute>} />
+              {/* Member Protected Routes */}
+              <Route path="/member" element={<MemberRoute><MemberDashboard /></MemberRoute>} />
+              <Route path="/member/profile" element={<MemberRoute><Profile /></MemberRoute>} />
+              <Route path="/member/meetings" element={<MemberRoute><MemberMeetings /></MemberRoute>} />
+              <Route path="/member/savings-loans" element={<MemberRoute><MemberSavingsLoans /></MemberRoute>} />
+              <Route path="/member/trainings" element={<MemberRoute><MemberTrainings /></MemberRoute>} />
+              <Route path="/member/schemes" element={<MemberRoute><MemberSchemes /></MemberRoute>} />
+              <Route path="/member/shop" element={<MemberRoute><Shop /></MemberRoute>} />
+              <Route path="/member/cart" element={<MemberRoute><Cart /></MemberRoute>} />
+              <Route path="/member/my-orders" element={<MemberRoute><MyOrders /></MemberRoute>} />
+              <Route path="/member/notifications" element={<MemberRoute><Notifications /></MemberRoute>} />
 
-            {/* Fallback Route */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Router>
-      </CartProvider>
-    </AuthProvider>
+              {/* Fallback Route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Router>
+        </CartProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

@@ -1,9 +1,11 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User as UserIcon, Bell } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { LogOut, User as UserIcon, Globe } from 'lucide-react';
 
 const Navbar = ({ onToggleSidebar }) => {
   const { user, logout } = useAuth();
+  const { toggleLanguage, t, language } = useLanguage();
 
   return (
     <nav className="navbar">
@@ -16,11 +18,30 @@ const Navbar = ({ onToggleSidebar }) => {
           ☰
         </button>
         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: '700' }}>
-          Dashboard
+          {user?.role === 'admin' ? t('adminPortal') : t('memberPortal')}
         </h2>
       </div>
 
       <div className="flex align-center gap-2">
+        {/* Language Switcher Button */}
+        <button
+          onClick={toggleLanguage}
+          className="btn btn-dark btn-sm flex align-center gap-1"
+          style={{
+            background: 'var(--dark-border)',
+            color: '#10b981',
+            fontWeight: '600',
+            padding: '0.4rem 0.8rem',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid rgba(16,185,129,0.3)',
+            cursor: 'pointer',
+          }}
+          title="Switch Language / ഭാഷ മാറ്റുക"
+        >
+          <Globe size={16} />
+          <span>{t('langSwitch')}</span>
+        </button>
+
         {user && (
           <>
             <div className="flex align-center gap-2 mr-3" style={{ padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--dark-border)' }}>
@@ -34,13 +55,13 @@ const Navbar = ({ onToggleSidebar }) => {
             </div>
             
             <button 
-              className="btn btn-dark btn-sm text-danger" 
+              className="btn btn-dark btn-sm text-danger flex align-center gap-1" 
               onClick={logout}
-              title="Logout"
-              style={{ padding: '0.6rem' }}
+              title={t('logout')}
+              style={{ padding: '0.5rem 0.8rem' }}
             >
               <LogOut size={16} />
-              <span>Logout</span>
+              <span>{t('logout')}</span>
             </button>
           </>
         )}
