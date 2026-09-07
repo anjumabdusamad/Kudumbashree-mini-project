@@ -117,6 +117,39 @@ const ProductManager = () => {
 
   if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Loading Products Catalogue...</div>;
 
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const fileFormData = new FormData();
+    fileFormData.append('image', file);
+
+    setUploadingFile(true);
+    setError('');
+    try {
+      const token = localStorage.getItem('kudumbashree_token');
+      const res = await axios.post('http://localhost:5000/api/upload', fileFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      });
+
+      if (res.data.success) {
+        const uploadedUrl = `http://localhost:5000${res.data.filePath}`;
+        setFormData((prev) => ({ ...prev, image: uploadedUrl }));
+        setMessage('Image uploaded successfully!');
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to upload image file');
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
   return (
     <div>
       <h1 className="mb-1" style={{ fontSize: '2rem' }}>Product Directory Management</h1>
@@ -242,13 +275,34 @@ const ProductManager = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Image URL (Optional)</label>
+            <div className="form-group mb-3">
+              <label className="form-label">Product Image (Upload File or Enter URL)</label>
+              <div className="flex gap-2 align-center mb-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                  id="product-file-upload"
+                />
+                <label
+                  htmlFor="product-file-upload"
+                  className="btn btn-dark btn-sm flex align-center gap-1"
+                  style={{ cursor: 'pointer', border: '1px dashed var(--primary)' }}
+                >
+                  <Image size={16} />
+                  <span>{uploadingFile ? 'Uploading File...' : 'Choose Image File'}</span>
+                </label>
+                {formData.image && (
+                  <span style={{ fontSize: '0.8rem', color: '#4ade80' }}>✓ Image Loaded</span>
+                )}
+              </div>
+
               <input
                 type="url"
                 name="image"
                 className="form-control"
-                placeholder="https://images.unsplash.com/..."
+                placeholder="Or paste image URL (https://...)"
                 value={formData.image}
                 onChange={handleInputChange}
               />
