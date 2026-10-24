@@ -36,6 +36,9 @@ const OrderSchema = new mongoose.Schema({
   shippingAddress: {
     type: String,
     required: [true, 'Please add a delivery address'],
+    trim: true,
+    minlength: [10, 'Delivery address must be at least 10 characters long'],
+    maxlength: [300, 'Delivery address cannot exceed 300 characters'],
   },
   paymentMethod: {
     type: String,

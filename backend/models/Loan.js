@@ -14,10 +14,15 @@ const LoanSchema = new mongoose.Schema({
   amount: {
     type: Number,
     required: [true, 'Please add a loan amount'],
+    min: [500, 'Loan amount must be at least ₹500'],
+    max: [500000, 'Loan amount cannot exceed ₹5,00,000'],
   },
   purpose: {
     type: String,
     required: [true, 'Please state the purpose of the loan'],
+    trim: true,
+    minlength: [3, 'Purpose must be at least 3 characters long'],
+    maxlength: [200, 'Purpose cannot exceed 200 characters'],
   },
   interestRate: {
     type: Number,
@@ -26,6 +31,8 @@ const LoanSchema = new mongoose.Schema({
   durationMonths: {
     type: Number,
     required: [true, 'Please specify the loan duration in months'],
+    min: [1, 'Loan duration must be at least 1 month'],
+    max: [60, 'Loan duration cannot exceed 60 months'],
   },
   monthlyInstallment: {
     type: Number,

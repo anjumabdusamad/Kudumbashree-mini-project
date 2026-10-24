@@ -14,7 +14,7 @@ const SavingsSchema = new mongoose.Schema({
   amount: {
     type: Number,
     required: [true, 'Please add a savings amount'],
-    min: [0, 'Savings amount cannot be negative'],
+    min: [1, 'Savings amount must be at least ₹1'],
   },
   date: {
     type: Date,
@@ -23,6 +23,8 @@ const SavingsSchema = new mongoose.Schema({
   description: {
     type: String,
     default: 'Weekly Savings Deposit',
+    trim: true,
+    maxlength: [200, 'Description cannot exceed 200 characters'],
   },
 });
 
