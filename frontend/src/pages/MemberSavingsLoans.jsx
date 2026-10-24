@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Landmark, CreditCard, ShieldAlert, CheckCircle, ArrowUpRight, Coins, Calendar, FileText } from 'lucide-react';
 import { generateFinancialReport } from '../utils/pdfGenerator';
+import { validateNumber, validateRequiredText } from '../utils/validators';
 
 const MemberSavingsLoans = () => {
   const { user } = useAuth();
@@ -15,10 +16,12 @@ const MemberSavingsLoans = () => {
   
   // Apply Loan form state
   const [loanForm, setLoanForm] = useState({ amount: '', purpose: '', durationMonths: '12' });
+  const [loanErrors, setLoanErrors] = useState({});
   const [loadingLoanSubmit, setLoadingLoanSubmit] = useState(false);
 
   // Repayment form state
   const [repayForm, setRepayForm] = useState({ amount: '', reference: 'Net Banking' });
+  const [repayErrors, setRepayErrors] = useState({});
   const [loadingRepaySubmit, setLoadingRepaySubmit] = useState(false);
   const [showRepayInput, setShowRepayInput] = useState(false);
 
@@ -61,6 +64,24 @@ const MemberSavingsLoans = () => {
   const handleLoanChange = (e) => {
     const { name, value } = e.target;
     setLoanForm(prev => ({ ...prev, [name]: value }));
+    if (loanErrors[name]) {
+      setLoanErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validateLoanForm = () => {
+    const errors = {};
+    const amtErr = validateNumber(loanForm.amount, 'Loan amount', 500, 500000);
+    if (amtErr) errors.amount = amtErr;
+
+    const purpErr = validateRequiredText(loanForm.purpose, 'Loan purpose', 3, 200);
+    if (purpErr) errors.purpose = purpErr;
+
+    const durErr = validateNumber(loanForm.durationMonths, 'Tenure', 1, 60, true);
+    if (durErr) errors.durationMonths = durErr;
+
+    setLoanErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleApplyLoan = async (e) => {
@@ -68,17 +89,22 @@ const MemberSavingsLoans = () => {
     setMessage('');
     setError('');
 
-    if (!loanForm.amount || !loanForm.purpose || !loanForm.durationMonths) {
-      setError('Please fill in all loan fields');
+    if (!validateLoanForm()) {
+      setError('Please resolve the highlighted loan application errors.');
       return;
     }
 
     setLoadingLoanSubmit(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/loans', loanForm);
+      const res = await axios.post('http://localhost:5000/api/loans', {
+        amount: Number(loanForm.amount),
+        purpose: loanForm.purpose.trim(),
+        durationMonths: Number(loanForm.durationMonths),
+      });
       if (res.data.success) {
         setMessage('Loan application submitted successfully! Pending administrator audit.');
         setLoanForm({ amount: '', purpose: '', durationMonths: '12' });
+        setLoanErrors({});
         fetchLoansHistory();
       }
     } catch (err) {
@@ -94,17 +120,24 @@ const MemberSavingsLoans = () => {
     setMessage('');
     setError('');
 
-    if (!repayForm.amount || Number(repayForm.amount) <= 0) {
-      setError('Please provide a valid repayment amount');
+    const maxAmt = activeLoan ? activeLoan.remainingAmount : Infinity;
+    const repayErr = validateNumber(repayForm.amount, 'Repayment amount', 1, maxAmt);
+    if (repayErr) {
+      setRepayErrors({ amount: repayErr });
+      setError(repayErr);
       return;
     }
 
     setLoadingRepaySubmit(true);
     try {
-      const res = await axios.post(`http://localhost:5000/api/loans/${loanId}/repay`, repayForm);
+      const res = await axios.post(`http://localhost:5000/api/loans/${loanId}/repay`, {
+        amount: Number(repayForm.amount),
+        reference: (repayForm.reference || 'Net Banking').trim(),
+      });
       if (res.data.success) {
         setMessage(res.data.message);
         setRepayForm({ amount: '', reference: 'Net Banking' });
+        setRepayErrors({});
         setShowRepayInput(false);
         fetchLoansHistory();
       }
@@ -272,13 +305,21 @@ const MemberSavingsLoans = () => {
                         <label className="form-label">Payment Amount (₹)</label>
                         <input
                           type="number"
-                          className="form-control"
+                          className={`form-control ${repayErrors.amount ? 'is-invalid' : ''}`}
                           min="1"
                           max={activeLoan.remainingAmount}
                           value={repayForm.amount}
-                          onChange={(e) => setRepayForm(prev => ({ ...prev, amount: e.target.value }))}
+                          onChange={(e) => {
+                            setRepayForm(prev => ({ ...prev, amount: e.target.value }));
+                            if (repayErrors.amount) setRepayErrors(prev => ({ ...prev, amount: null }));
+                          }}
                           required
                         />
+                        {repayErrors.amount ? (
+                          <div className="field-error">{repayErrors.amount}</div>
+                        ) : (
+                          <small className="field-hint">Maximum payable: ₹{activeLoan.remainingAmount.toLocaleString('en-IN')}</small>
+                        )}
                       </div>
                       <div className="form-group mb-4">
                         <label className="form-label">Reference ID (e.g. UPI, NetBanking reference)</label>
@@ -313,19 +354,25 @@ const MemberSavingsLoans = () => {
                   <input
                     type="number"
                     name="amount"
-                    className="form-control"
+                    className={`form-control ${loanErrors.amount ? 'is-invalid' : ''}`}
                     placeholder="Enter principal amount (e.g., 10000)"
                     min="500"
+                    max="500000"
                     value={loanForm.amount}
                     onChange={handleLoanChange}
                     required
                   />
+                  {loanErrors.amount ? (
+                    <div className="field-error">{loanErrors.amount}</div>
+                  ) : (
+                    <small className="field-hint">Eligible range: ₹500 to ₹5,00,000</small>
+                  )}
                 </div>
                 <div className="form-group">
                   <label className="form-label">Repayment Tenure Duration (Months)</label>
                   <select
                     name="durationMonths"
-                    className="form-control form-select"
+                    className={`form-control form-select ${loanErrors.durationMonths ? 'is-invalid' : ''}`}
                     value={loanForm.durationMonths}
                     onChange={handleLoanChange}
                     required
@@ -335,18 +382,20 @@ const MemberSavingsLoans = () => {
                     <option value="18">18 Months</option>
                     <option value="24">24 Months</option>
                   </select>
+                  {loanErrors.durationMonths && <div className="field-error">{loanErrors.durationMonths}</div>}
                 </div>
                 <div className="form-group mb-4">
                   <label className="form-label">State Loan Purpose</label>
                   <textarea
                     name="purpose"
                     rows="3"
-                    className="form-control"
+                    className={`form-control ${loanErrors.purpose ? 'is-invalid' : ''}`}
                     placeholder="E.g., Purchase sewing machine, launch pickle manufacturing startup unit..."
                     value={loanForm.purpose}
                     onChange={handleLoanChange}
                     required
                   ></textarea>
+                  {loanErrors.purpose && <div className="field-error">{loanErrors.purpose}</div>}
                 </div>
                 <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loadingLoanSubmit}>
                   <ArrowUpRight size={18} /> {loadingLoanSubmit ? 'Submitting Application...' : 'Submit Loan Request'}

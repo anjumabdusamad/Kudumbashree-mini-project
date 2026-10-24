@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Plus, Users, ShieldAlert, CheckCircle, Trash2, Edit } from 'lucide-react';
+import { validateRequiredText, validateCode } from '../utils/validators';
 
 const NHGManager = () => {
   const [nhgs, setNhgs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ name: '', code: '', location: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
   
   const [selectedNhg, setSelectedNhg] = useState(null);
   const [leaderData, setLeaderData] = useState({ presidentId: '', secretaryId: '', treasurerId: '' });
@@ -36,6 +38,24 @@ const NHGManager = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validateNhgForm = () => {
+    const errors = {};
+    const nameErr = validateRequiredText(formData.name, 'NHG name', 3, 100);
+    if (nameErr) errors.name = nameErr;
+
+    const codeErr = validateCode(formData.code, 'NHG code', 2, 15);
+    if (codeErr) errors.code = codeErr;
+
+    const locErr = validateRequiredText(formData.location, 'Location', 3, 100);
+    if (locErr) errors.location = locErr;
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleAddNhg = async (e) => {
@@ -43,17 +63,22 @@ const NHGManager = () => {
     setMessage('');
     setError('');
 
-    if (!formData.name || !formData.code || !formData.location) {
-      setError('Please fill in all fields');
+    if (!validateNhgForm()) {
+      setError('Please resolve the highlighted field errors before creating the NHG unit.');
       return;
     }
 
     setLoadingAdd(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/admin/nhgs', formData);
+      const res = await axios.post('http://localhost:5000/api/admin/nhgs', {
+        name: formData.name.trim(),
+        code: formData.code.trim().toUpperCase(),
+        location: formData.location.trim(),
+      });
       if (res.data.success) {
         setMessage('NHG Unit created successfully!');
         setFormData({ name: '', code: '', location: '' });
+        setFieldErrors({});
         fetchNhgs();
       }
     } catch (err) {
@@ -170,36 +195,43 @@ const NHGManager = () => {
               <input
                 type="text"
                 name="name"
-                className="form-control"
+                className={`form-control ${fieldErrors.name ? 'is-invalid' : ''}`}
                 placeholder="E.g., Kairali Ayalkootam"
                 value={formData.name}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>
             <div className="form-group">
               <label className="form-label">NHG Code</label>
               <input
                 type="text"
                 name="code"
-                className="form-control"
+                className={`form-control ${fieldErrors.code ? 'is-invalid' : ''}`}
                 placeholder="Unique code (e.g. NHG101)"
                 value={formData.code}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.code ? (
+                <div className="field-error">{fieldErrors.code}</div>
+              ) : (
+                <small className="field-hint">2-15 alphanumeric characters (no spaces)</small>
+              )}
             </div>
             <div className="form-group mb-4">
               <label className="form-label">Location (Ward/Place)</label>
               <input
                 type="text"
                 name="location"
-                className="form-control"
+                className={`form-control ${fieldErrors.location ? 'is-invalid' : ''}`}
                 placeholder="E.g., Ward 4, Trivandrum"
                 value={formData.location}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.location && <div className="field-error">{fieldErrors.location}</div>}
             </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loadingAdd}>
               <Plus size={18} /> {loadingAdd ? 'Creating...' : 'Register NHG'}

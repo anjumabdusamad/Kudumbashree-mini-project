@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Plus, Edit, Trash2, ShoppingBag, ShieldAlert, CheckCircle, Image } from 'lucide-react';
+import { validateRequiredText, validateNumber } from '../utils/validators';
 
 const ProductManager = () => {
   const [products, setProducts] = useState([]);
@@ -9,6 +10,7 @@ const ProductManager = () => {
 
   // Form State
   const [formData, setFormData] = useState({ name: '', description: '', price: '', image: '', category: 'Food & Spices', stock: '10', nhgId: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
@@ -44,6 +46,31 @@ const ProductManager = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validateProductForm = () => {
+    const errors = {};
+    const nameErr = validateRequiredText(formData.name, 'Product title', 2, 100);
+    if (nameErr) errors.name = nameErr;
+
+    const descErr = validateRequiredText(formData.description, 'Product description', 5, 1000);
+    if (descErr) errors.description = descErr;
+
+    const priceErr = validateNumber(formData.price, 'Price', 1, 500000);
+    if (priceErr) errors.price = priceErr;
+
+    const stockErr = validateNumber(formData.stock, 'Initial stock', 0, 100000, true);
+    if (stockErr) errors.stock = stockErr;
+
+    if (!formData.nhgId && nhgs.length > 0) {
+      errors.nhgId = 'Please select a producing NHG unit';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleCreateOrUpdateProduct = async (e) => {
@@ -51,8 +78,8 @@ const ProductManager = () => {
     setMessage('');
     setError('');
     
-    if (!formData.name || !formData.description || !formData.price || !formData.category || !formData.stock) {
-      setError('Please fill in all required fields');
+    if (!validateProductForm()) {
+      setError('Please resolve the highlighted field errors before submitting.');
       return;
     }
 
@@ -74,6 +101,7 @@ const ProductManager = () => {
       }
       // Reset form
       setFormData({ name: '', description: '', price: '', image: '', category: 'Food & Spices', stock: '10', nhgId: nhgs.length > 0 ? nhgs[0]._id : '' });
+      setFieldErrors({});
       loadData();
     } catch (err) {
       console.error(err);
@@ -85,6 +113,7 @@ const ProductManager = () => {
 
   const handleEditClick = (p) => {
     setEditingId(p._id);
+    setFieldErrors({});
     setFormData({
       name: p.name,
       description: p.description,
@@ -195,12 +224,13 @@ const ProductManager = () => {
               <input
                 type="text"
                 name="name"
-                className="form-control"
+                className={`form-control ${fieldErrors.name ? 'is-invalid' : ''}`}
                 placeholder="E.g., Organic Honey (250g)"
                 value={formData.name}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>
             
             <div className="grid-2">
@@ -209,13 +239,14 @@ const ProductManager = () => {
                 <input
                   type="number"
                   name="price"
-                  className="form-control"
+                  className={`form-control ${fieldErrors.price ? 'is-invalid' : ''}`}
                   placeholder="150"
-                  min="0"
+                  min="1"
                   value={formData.price}
                   onChange={handleInputChange}
                   required
                 />
+                {fieldErrors.price && <div className="field-error">{fieldErrors.price}</div>}
               </div>
               
               <div className="form-group">
@@ -223,13 +254,14 @@ const ProductManager = () => {
                 <input
                   type="number"
                   name="stock"
-                  className="form-control"
+                  className={`form-control ${fieldErrors.stock ? 'is-invalid' : ''}`}
                   placeholder="10"
                   min="0"
                   value={formData.stock}
                   onChange={handleInputChange}
                   required
                 />
+                {fieldErrors.stock && <div className="field-error">{fieldErrors.stock}</div>}
               </div>
             </div>
 
@@ -259,7 +291,7 @@ const ProductManager = () => {
                 ) : (
                   <select
                     name="nhgId"
-                    className="form-control form-select"
+                    className={`form-control form-select ${fieldErrors.nhgId ? 'is-invalid' : ''}`}
                     value={formData.nhgId}
                     onChange={handleInputChange}
                     required
@@ -272,6 +304,7 @@ const ProductManager = () => {
                     ))}
                   </select>
                 )}
+                {fieldErrors.nhgId && <div className="field-error">{fieldErrors.nhgId}</div>}
               </div>
             </div>
 
@@ -313,12 +346,13 @@ const ProductManager = () => {
               <textarea
                 name="description"
                 rows="3"
-                className="form-control"
+                className={`form-control ${fieldErrors.description ? 'is-invalid' : ''}`}
                 placeholder="Provide detail specifications like weight, ingredients, organic certificates..."
                 value={formData.description}
                 onChange={handleInputChange}
                 required
               ></textarea>
+              {fieldErrors.description && <div className="field-error">{fieldErrors.description}</div>}
             </div>
 
             <div className="flex gap-2">

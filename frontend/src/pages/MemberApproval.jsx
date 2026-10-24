@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { UserCheck, UserX, UserMinus, ShieldAlert, CheckCircle, UserPlus, Mail, Phone, Lock } from 'lucide-react';
+import { validateEmail, validatePhone, validatePassword, validateRequiredText } from '../utils/validators';
 
 const MemberApproval = () => {
   const [users, setUsers] = useState([]);
@@ -17,6 +18,7 @@ const MemberApproval = () => {
     password: '',
     nhgId: '',
   });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loadingAdd, setLoadingAdd] = useState(false);
 
   const fetchPendingMembers = async () => {
@@ -70,13 +72,35 @@ const MemberApproval = () => {
     }
   };
 
+  const validateAddForm = () => {
+    const errors = {};
+    const nameErr = validateRequiredText(addForm.name, 'Full name', 2, 50);
+    if (nameErr) errors.name = nameErr;
+
+    const emailErr = validateEmail(addForm.email);
+    if (emailErr) errors.email = emailErr;
+
+    const phoneErr = validatePhone(addForm.phone);
+    if (phoneErr) errors.phone = phoneErr;
+
+    const passErr = validatePassword(addForm.password, 6);
+    if (passErr) errors.password = passErr;
+
+    if (!addForm.nhgId) {
+      errors.nhgId = 'Please assign an NHG unit';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleAddMember = async (e) => {
     e.preventDefault();
     setMessage('');
     setError('');
 
-    if (!addForm.name || !addForm.email || !addForm.phone || !addForm.password) {
-      setError('Please fill in all details to create a member account.');
+    if (!validateAddForm()) {
+      setError('Please resolve the highlighted field errors before creating the member account.');
       return;
     }
 
@@ -92,6 +116,7 @@ const MemberApproval = () => {
           password: '',
           nhgId: nhgs.length > 0 ? nhgs[0]._id : '',
         });
+        setFieldErrors({});
       }
     } catch (err) {
       console.error(err);
@@ -104,6 +129,9 @@ const MemberApproval = () => {
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setAddForm(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
+    }
   };
 
   if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Loading registration portal...</div>;
@@ -158,12 +186,13 @@ const MemberApproval = () => {
               <input
                 type="text"
                 name="name"
-                className="form-control"
+                className={`form-control ${fieldErrors.name ? 'is-invalid' : ''}`}
                 placeholder="E.g., Radha Devi"
                 value={addForm.name}
                 onChange={handleFormChange}
                 required
               />
+              {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>
 
             <div className="form-group">
@@ -171,12 +200,13 @@ const MemberApproval = () => {
               <input
                 type="email"
                 name="email"
-                className="form-control"
+                className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
                 placeholder="radha@gmail.com"
                 value={addForm.email}
                 onChange={handleFormChange}
                 required
               />
+              {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
             </div>
 
             <div className="form-group">
@@ -184,12 +214,22 @@ const MemberApproval = () => {
               <input
                 type="tel"
                 name="phone"
-                className="form-control"
-                placeholder="10-digit number"
+                maxLength="10"
+                className={`form-control ${fieldErrors.phone ? 'is-invalid' : ''}`}
+                placeholder="10-digit mobile number"
                 value={addForm.phone}
-                onChange={handleFormChange}
+                onChange={(e) => {
+                  const nums = e.target.value.replace(/\D/g, '');
+                  setAddForm(prev => ({ ...prev, phone: nums }));
+                  if (fieldErrors.phone) setFieldErrors(prev => ({ ...prev, phone: null }));
+                }}
                 required
               />
+              {fieldErrors.phone ? (
+                <div className="field-error">{fieldErrors.phone}</div>
+              ) : (
+                <small className="field-hint">10-digit number starting with 6-9</small>
+              )}
             </div>
 
             <div className="form-group">
@@ -197,12 +237,13 @@ const MemberApproval = () => {
               <input
                 type="password"
                 name="password"
-                className="form-control"
+                className={`form-control ${fieldErrors.password ? 'is-invalid' : ''}`}
                 placeholder="Minimum 6 characters"
                 value={addForm.password}
                 onChange={handleFormChange}
                 required
               />
+              {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
             </div>
 
             <div className="form-group">
@@ -212,7 +253,7 @@ const MemberApproval = () => {
               ) : (
                 <select
                   name="nhgId"
-                  className="form-control form-select"
+                  className={`form-control form-select ${fieldErrors.nhgId ? 'is-invalid' : ''}`}
                   value={addForm.nhgId}
                   onChange={handleFormChange}
                   required
@@ -224,6 +265,7 @@ const MemberApproval = () => {
                   ))}
                 </select>
               )}
+              {fieldErrors.nhgId && <div className="field-error">{fieldErrors.nhgId}</div>}
             </div>
 
             <button

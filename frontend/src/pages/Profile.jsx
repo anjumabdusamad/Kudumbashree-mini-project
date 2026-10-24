@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Phone, Lock, ShieldAlert, CheckCircle } from 'lucide-react';
+import { validateEmail, validatePhone, validatePassword, validateRequiredText } from '../utils/validators';
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
@@ -11,6 +12,7 @@ const Profile = () => {
     password: '',
   });
 
+  const [fieldErrors, setFieldErrors] = useState({});
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,6 +20,29 @@ const Profile = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validate = () => {
+    const errors = {};
+    const nameErr = validateRequiredText(formData.name, 'Full name', 2, 50);
+    if (nameErr) errors.name = nameErr;
+
+    const emailErr = validateEmail(formData.email);
+    if (emailErr) errors.email = emailErr;
+
+    const phoneErr = validatePhone(formData.phone);
+    if (phoneErr) errors.phone = phoneErr;
+
+    if (formData.password && formData.password.trim()) {
+      const passErr = validatePassword(formData.password, 6);
+      if (passErr) errors.password = passErr;
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
@@ -25,8 +50,8 @@ const Profile = () => {
     setMessage('');
     setError('');
     
-    if (!formData.name || !formData.email || !formData.phone) {
-      setError('Name, email, and phone are required fields.');
+    if (!validate()) {
+      setError('Please resolve the highlighted field errors before updating.');
       return;
     }
 
@@ -89,13 +114,14 @@ const Profile = () => {
               <input
                 type="text"
                 name="name"
-                className="form-control"
+                className={`form-control ${fieldErrors.name ? 'is-invalid' : ''}`}
                 style={{ paddingLeft: '2.75rem' }}
                 value={formData.name}
                 onChange={handleChange}
                 required
               />
             </div>
+            {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
           </div>
 
           <div className="form-group">
@@ -107,13 +133,14 @@ const Profile = () => {
               <input
                 type="email"
                 name="email"
-                className="form-control"
+                className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
                 style={{ paddingLeft: '2.75rem' }}
                 value={formData.email}
                 onChange={handleChange}
                 required
               />
             </div>
+            {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
           </div>
 
           <div className="form-group">
@@ -125,13 +152,23 @@ const Profile = () => {
               <input
                 type="tel"
                 name="phone"
-                className="form-control"
+                maxLength="10"
+                className={`form-control ${fieldErrors.phone ? 'is-invalid' : ''}`}
                 style={{ paddingLeft: '2.75rem' }}
                 value={formData.phone}
-                onChange={handleChange}
+                onChange={(e) => {
+                  const nums = e.target.value.replace(/\D/g, '');
+                  setFormData(prev => ({ ...prev, phone: nums }));
+                  if (fieldErrors.phone) setFieldErrors(prev => ({ ...prev, phone: null }));
+                }}
                 required
               />
             </div>
+            {fieldErrors.phone ? (
+              <div className="field-error">{fieldErrors.phone}</div>
+            ) : (
+              <small className="field-hint">10-digit number starting with 6-9</small>
+            )}
           </div>
 
           <div className="form-group mb-4">
@@ -143,13 +180,14 @@ const Profile = () => {
               <input
                 type="password"
                 name="password"
-                className="form-control"
+                className={`form-control ${fieldErrors.password ? 'is-invalid' : ''}`}
                 style={{ paddingLeft: '2.75rem' }}
                 placeholder="Enter new password (min. 6 chars)"
                 value={formData.password}
                 onChange={handleChange}
               />
             </div>
+            {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
           </div>
 
           <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--dark-border)', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem' }}>

@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { GraduationCap, Plus, Users, ShieldAlert, CheckCircle, Calendar, MapPin, Eye } from 'lucide-react';
+import { validateRequiredText, validateNumber } from '../utils/validators';
 
 const TrainingManager = () => {
   const [trainings, setTrainings] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({ title: '', description: '', trainer: '', date: '', venue: '', capacity: '20' });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loadingAdd, setLoadingAdd] = useState(false);
 
   const [selectedTraining, setSelectedTraining] = useState(null); // Shows participants
@@ -34,6 +36,34 @@ const TrainingManager = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validateTrainingForm = () => {
+    const errors = {};
+    const titleErr = validateRequiredText(formData.title, 'Training title', 3, 120);
+    if (titleErr) errors.title = titleErr;
+
+    const trainerErr = validateRequiredText(formData.trainer, 'Trainer', 2, 100);
+    if (trainerErr) errors.trainer = trainerErr;
+
+    if (!formData.date) {
+      errors.date = 'Training date is required';
+    }
+
+    const capErr = validateNumber(formData.capacity, 'Capacity', 1, 1000, true);
+    if (capErr) errors.capacity = capErr;
+
+    const venueErr = validateRequiredText(formData.venue, 'Venue', 2, 100);
+    if (venueErr) errors.venue = venueErr;
+
+    const descErr = validateRequiredText(formData.description, 'Description', 5, 1000);
+    if (descErr) errors.description = descErr;
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleCreateTraining = async (e) => {
@@ -41,17 +71,25 @@ const TrainingManager = () => {
     setMessage('');
     setError('');
 
-    if (!formData.title || !formData.description || !formData.trainer || !formData.date || !formData.venue || !formData.capacity) {
-      setError('Please fill in all training registration fields');
+    if (!validateTrainingForm()) {
+      setError('Please resolve the highlighted field errors before submitting.');
       return;
     }
 
     setLoadingAdd(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/trainings', formData);
+      const res = await axios.post('http://localhost:5000/api/trainings', {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        trainer: formData.trainer.trim(),
+        date: formData.date,
+        venue: formData.venue.trim(),
+        capacity: Number(formData.capacity),
+      });
       if (res.data.success) {
         setMessage('Training program created successfully and notifications broadcasted!');
         setFormData({ title: '', description: '', trainer: '', date: '', venue: '', capacity: '20' });
+        setFieldErrors({});
         fetchTrainings();
       }
     } catch (err) {
@@ -127,24 +165,26 @@ const TrainingManager = () => {
               <input
                 type="text"
                 name="title"
-                className="form-control"
+                className={`form-control ${fieldErrors.title ? 'is-invalid' : ''}`}
                 placeholder="E.g., Organic Soap Making Workshop"
                 value={formData.title}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.title && <div className="field-error">{fieldErrors.title}</div>}
             </div>
             <div className="form-group">
               <label className="form-label">Trainer / Organisation</label>
               <input
                 type="text"
                 name="trainer"
-                className="form-control"
+                className={`form-control ${fieldErrors.trainer ? 'is-invalid' : ''}`}
                 placeholder="E.g., Kudumbasree District Mission / KVASU"
                 value={formData.trainer}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.trainer && <div className="field-error">{fieldErrors.trainer}</div>}
             </div>
             <div className="grid-2">
               <div className="form-group">
@@ -152,24 +192,27 @@ const TrainingManager = () => {
                 <input
                   type="date"
                   name="date"
-                  className="form-control"
+                  className={`form-control ${fieldErrors.date ? 'is-invalid' : ''}`}
                   value={formData.date}
                   onChange={handleInputChange}
                   required
                 />
+                {fieldErrors.date && <div className="field-error">{fieldErrors.date}</div>}
               </div>
               <div className="form-group">
                 <label className="form-label">Max Capacity</label>
                 <input
                   type="number"
                   name="capacity"
-                  className="form-control"
+                  className={`form-control ${fieldErrors.capacity ? 'is-invalid' : ''}`}
                   placeholder="20"
                   min="1"
+                  max="1000"
                   value={formData.capacity}
                   onChange={handleInputChange}
                   required
                 />
+                {fieldErrors.capacity && <div className="field-error">{fieldErrors.capacity}</div>}
               </div>
             </div>
             <div className="form-group">
@@ -177,24 +220,26 @@ const TrainingManager = () => {
               <input
                 type="text"
                 name="venue"
-                className="form-control"
+                className={`form-control ${fieldErrors.venue ? 'is-invalid' : ''}`}
                 placeholder="E.g., Panchayat Hall, Ward 4"
                 value={formData.venue}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.venue && <div className="field-error">{fieldErrors.venue}</div>}
             </div>
             <div className="form-group mb-4">
               <label className="form-label">Program Description</label>
               <textarea
                 name="description"
                 rows="3"
-                className="form-control"
-                placeholder="Details about raw materials, timings, certifications..."
+                className={`form-control ${fieldErrors.description ? 'is-invalid' : ''}`}
+                placeholder="Provide prerequisites, schedules, kit requirements..."
                 value={formData.description}
                 onChange={handleInputChange}
                 required
               ></textarea>
+              {fieldErrors.description && <div className="field-error">{fieldErrors.description}</div>}
             </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loadingAdd}>
               <Plus size={18} /> {loadingAdd ? 'Publishing...' : 'Publish Training Program'}

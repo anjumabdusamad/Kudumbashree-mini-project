@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FileText, Plus, ShieldAlert, CheckCircle, ExternalLink } from 'lucide-react';
+import { validateRequiredText } from '../utils/validators';
 
 const SchemeManager = () => {
   const [schemes, setSchemes] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({ title: '', description: '', eligibility: '', benefits: '', applicationLink: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loadingAdd, setLoadingAdd] = useState(false);
 
   const [message, setMessage] = useState('');
@@ -33,6 +35,27 @@ const SchemeManager = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validateSchemeForm = () => {
+    const errors = {};
+    const titleErr = validateRequiredText(formData.title, 'Scheme title', 3, 120);
+    if (titleErr) errors.title = titleErr;
+
+    const benErr = validateRequiredText(formData.benefits, 'Benefits', 3, 200);
+    if (benErr) errors.benefits = benErr;
+
+    const eligErr = validateRequiredText(formData.eligibility, 'Eligibility criteria', 3, 200);
+    if (eligErr) errors.eligibility = eligErr;
+
+    const descErr = validateRequiredText(formData.description, 'Description', 5, 1000);
+    if (descErr) errors.description = descErr;
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleCreateScheme = async (e) => {
@@ -40,17 +63,24 @@ const SchemeManager = () => {
     setMessage('');
     setError('');
 
-    if (!formData.title || !formData.description || !formData.eligibility || !formData.benefits) {
-      setError('Please fill in all required scheme fields');
+    if (!validateSchemeForm()) {
+      setError('Please resolve the highlighted field errors before publishing.');
       return;
     }
 
     setLoadingAdd(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/schemes', formData);
+      const res = await axios.post('http://localhost:5000/api/schemes', {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        eligibility: formData.eligibility.trim(),
+        benefits: formData.benefits.trim(),
+        applicationLink: formData.applicationLink ? formData.applicationLink.trim() : '',
+      });
       if (res.data.success) {
         setMessage('Welfare scheme published successfully! Member alerts broadcasted.');
         setFormData({ title: '', description: '', eligibility: '', benefits: '', applicationLink: '' });
+        setFieldErrors({});
         fetchSchemes();
       }
     } catch (err) {
@@ -106,36 +136,39 @@ const SchemeManager = () => {
               <input
                 type="text"
                 name="title"
-                className="form-control"
+                className={`form-control ${fieldErrors.title ? 'is-invalid' : ''}`}
                 placeholder="E.g., Kudumbashree Micro-Enterprise Subsidy"
                 value={formData.title}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.title && <div className="field-error">{fieldErrors.title}</div>}
             </div>
             <div className="form-group">
               <label className="form-label">Subsidies / Benefits Details</label>
               <input
                 type="text"
                 name="benefits"
-                className="form-control"
+                className={`form-control ${fieldErrors.benefits ? 'is-invalid' : ''}`}
                 placeholder="E.g., 50% capital subsidy up to ₹50,000 for startup units"
                 value={formData.benefits}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.benefits && <div className="field-error">{fieldErrors.benefits}</div>}
             </div>
             <div className="form-group">
               <label className="form-label">Eligibility Criteria</label>
               <input
                 type="text"
                 name="eligibility"
-                className="form-control"
+                className={`form-control ${fieldErrors.eligibility ? 'is-invalid' : ''}`}
                 placeholder="E.g., Approved NHG unit with minimum 1 year active status"
                 value={formData.eligibility}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.eligibility && <div className="field-error">{fieldErrors.eligibility}</div>}
             </div>
             <div className="form-group">
               <label className="form-label">Official Link (Optional)</label>
@@ -153,12 +186,13 @@ const SchemeManager = () => {
               <textarea
                 name="description"
                 rows="3"
-                className="form-control"
+                className={`form-control ${fieldErrors.description ? 'is-invalid' : ''}`}
                 placeholder="Detailed explanations regarding application procedures, document audits, and deadlines..."
                 value={formData.description}
                 onChange={handleInputChange}
                 required
               ></textarea>
+              {fieldErrors.description && <div className="field-error">{fieldErrors.description}</div>}
             </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loadingAdd}>
               <Plus size={18} /> {loadingAdd ? 'Publishing...' : 'Publish Scheme'}

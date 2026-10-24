@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Calendar, Plus, Users, ShieldAlert, CheckCircle, Clock, MapPin, FileText } from 'lucide-react';
 import { generateMeetingReport } from '../utils/pdfGenerator';
+import { validateRequiredText } from '../utils/validators';
 
 const MeetingManager = () => {
   const [nhgs, setNhgs] = useState([]);
@@ -12,6 +13,7 @@ const MeetingManager = () => {
   const [loadingMeetings, setLoadingMeetings] = useState(false);
 
   const [formData, setFormData] = useState({ date: '', time: '', venue: '', agenda: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [activeMeeting, setActiveMeeting] = useState(null); // Meeting selected for marking attendance
   const [attendanceRecords, setAttendanceRecords] = useState([]); // [{ memberId, status }]
 
@@ -66,6 +68,27 @@ const MeetingManager = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validateMeetingForm = () => {
+    const errors = {};
+    if (!formData.date) {
+      errors.date = 'Meeting date is required';
+    }
+    if (!formData.time) {
+      errors.time = 'Meeting time is required';
+    }
+    const venueErr = validateRequiredText(formData.venue, 'Venue', 2, 100);
+    if (venueErr) errors.venue = venueErr;
+
+    const agendaErr = validateRequiredText(formData.agenda, 'Agenda', 3, 500);
+    if (agendaErr) errors.agenda = agendaErr;
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleScheduleMeeting = async (e) => {
@@ -73,8 +96,8 @@ const MeetingManager = () => {
     setMessage('');
     setError('');
 
-    if (!formData.date || !formData.time || !formData.venue || !formData.agenda) {
-      setError('Please fill in all scheduling fields');
+    if (!validateMeetingForm()) {
+      setError('Please resolve the highlighted field errors before scheduling.');
       return;
     }
 
@@ -82,11 +105,15 @@ const MeetingManager = () => {
     try {
       const res = await axios.post('http://localhost:5000/api/meetings', {
         nhgId: selectedNhgId,
-        ...formData
+        date: formData.date,
+        time: formData.time,
+        venue: formData.venue.trim(),
+        agenda: formData.agenda.trim(),
       });
       if (res.data.success) {
         setMessage('Meeting scheduled and member notifications broadcasted successfully!');
         setFormData({ date: '', time: '', venue: '', agenda: '' });
+        setFieldErrors({});
         fetchMeetings(selectedNhgId);
       }
     } catch (err) {
@@ -218,46 +245,50 @@ const MeetingManager = () => {
               <input
                 type="date"
                 name="date"
-                className="form-control"
+                className={`form-control ${fieldErrors.date ? 'is-invalid' : ''}`}
                 value={formData.date}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.date && <div className="field-error">{fieldErrors.date}</div>}
             </div>
             <div className="form-group">
               <label className="form-label">Meeting Time</label>
               <input
                 type="time"
                 name="time"
-                className="form-control"
+                className={`form-control ${fieldErrors.time ? 'is-invalid' : ''}`}
                 value={formData.time}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.time && <div className="field-error">{fieldErrors.time}</div>}
             </div>
             <div className="form-group">
               <label className="form-label">Venue (Meeting Place)</label>
               <input
                 type="text"
                 name="venue"
-                className="form-control"
+                className={`form-control ${fieldErrors.venue ? 'is-invalid' : ''}`}
                 placeholder="E.g., NHG President's House"
                 value={formData.venue}
                 onChange={handleInputChange}
                 required
               />
+              {fieldErrors.venue && <div className="field-error">{fieldErrors.venue}</div>}
             </div>
             <div className="form-group mb-4">
               <label className="form-label">Meeting Agenda</label>
               <textarea
                 name="agenda"
                 rows="3"
-                className="form-control"
+                className={`form-control ${fieldErrors.agenda ? 'is-invalid' : ''}`}
                 placeholder="E.g., Financial budget review, handicraft training program planning..."
                 value={formData.agenda}
                 onChange={handleInputChange}
                 required
               ></textarea>
+              {fieldErrors.agenda && <div className="field-error">{fieldErrors.agenda}</div>}
             </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loadingAdd || !selectedNhgId}>
               <Plus size={18} /> {loadingAdd ? 'Scheduling...' : 'Post Meeting Schedule'}

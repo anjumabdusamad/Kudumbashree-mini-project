@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { ShoppingCart, Trash2, ShieldAlert, CheckCircle, ArrowLeft, Send, Coins, Truck } from 'lucide-react';
+import { validateAddress } from '../utils/validators';
 
 const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal, clearCart } = useCart();
@@ -32,8 +33,9 @@ const Cart = () => {
     setMessage('');
     setError('');
 
-    if (!shippingAddress) {
-      setError('Please provide a delivery address');
+    const addressErr = validateAddress(shippingAddress);
+    if (addressErr) {
+      setError(addressErr);
       return;
     }
 
@@ -46,7 +48,7 @@ const Cart = () => {
 
       const res = await axios.post('http://localhost:5000/api/orders', {
         items: orderItems,
-        shippingAddress,
+        shippingAddress: shippingAddress.trim(),
         paymentMethod,
       });
 

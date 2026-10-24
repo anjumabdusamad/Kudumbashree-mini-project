@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Landmark, ArrowUpRight, ArrowDownRight, ShieldAlert, CheckCircle, Search, CreditCard, DollarSign } from 'lucide-react';
+import { validateNumber } from '../utils/validators';
 
 const FinancialTracker = () => {
   const [members, setMembers] = useState([]);
@@ -69,14 +70,23 @@ const FinancialTracker = () => {
     setMessage('');
     setError('');
 
-    if (!savingsData.userId || !savingsData.amount) {
-      setError('Please fill in member and amount');
+    if (!savingsData.userId) {
+      setError('Please select an active member');
+      return;
+    }
+
+    const amtErr = validateNumber(savingsData.amount, 'Savings amount', 1, 100000);
+    if (amtErr) {
+      setError(amtErr);
       return;
     }
 
     setLoadingSavings(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/savings', savingsData);
+      const res = await axios.post('http://localhost:5000/api/savings', {
+        ...savingsData,
+        amount: Number(savingsData.amount),
+      });
       if (res.data.success) {
         const selectedMemberName = members.find(m => m._id === savingsData.userId)?.name || 'Member';
         setMessage(`Successfully credited ₹${savingsData.amount} savings to ${selectedMemberName}!`);
@@ -123,12 +133,21 @@ const FinancialTracker = () => {
     e.preventDefault();
     setMessage('');
     setError('');
+
+    const targetLoan = loans.find(l => l._id === repayData.loanId);
+    const maxPayable = targetLoan ? targetLoan.remainingAmount : Infinity;
+    const amtErr = validateNumber(repayData.amount, 'Repayment amount', 1, maxPayable);
+    if (amtErr) {
+      setError(amtErr);
+      return;
+    }
+
     setLoadingRepay(true);
 
     try {
       const res = await axios.post(`http://localhost:5000/api/loans/${repayData.loanId}/repay`, {
-        amount: repayData.amount,
-        reference: repayData.reference
+        amount: Number(repayData.amount),
+        reference: (repayData.reference || 'Cash / Bank Transfer').trim()
       });
 
       if (res.data.success) {

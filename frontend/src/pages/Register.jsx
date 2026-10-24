@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { User as UserIcon, Mail, Phone, Lock, Eye, ShieldAlert, CheckCircle2, KeyRound } from 'lucide-react';
+import { validateEmail, validatePhone, validatePassword, validateRequiredText } from '../utils/validators';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +16,7 @@ const Register = () => {
     adminSecret: ''
   });
   
+  const [fieldErrors, setFieldErrors] = useState({});
   const [nhgs, setNhgs] = useState([]);
   const [loadingNhgs, setLoadingNhgs] = useState(true);
   const [errMessage, setErrMessage] = useState('');
@@ -54,6 +56,37 @@ const Register = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear field-specific error as user types
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    const nameErr = validateRequiredText(formData.name, 'Full name', 2, 50);
+    if (nameErr) errors.name = nameErr;
+
+    const emailErr = validateEmail(formData.email);
+    if (emailErr) errors.email = emailErr;
+
+    const phoneErr = validatePhone(formData.phone);
+    if (phoneErr) errors.phone = phoneErr;
+
+    const passwordErr = validatePassword(formData.password, 6);
+    if (passwordErr) errors.password = passwordErr;
+
+    if (formData.role === 'member' && !formData.nhgId) {
+      errors.nhgId = 'Please select a Neighborhood Group (NHG) unit';
+    }
+
+    if (formData.role === 'admin' && !formData.adminSecret) {
+      errors.adminSecret = 'Please provide the Admin Secret Key';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
@@ -61,19 +94,8 @@ const Register = () => {
     setErrMessage('');
     setSuccessMessage('');
     
-    // Validations
-    if (!formData.name || !formData.email || !formData.phone || !formData.password) {
-      setErrMessage('Please fill in all general fields');
-      return;
-    }
-
-    if (formData.role === 'member' && !formData.nhgId) {
-      setErrMessage('Please select an NHG unit');
-      return;
-    }
-
-    if (formData.role === 'admin' && !formData.adminSecret) {
-      setErrMessage('Please provide the Admin Secret Key');
+    if (!validateForm()) {
+      setErrMessage('Please correct the highlighted errors before submitting.');
       return;
     }
 
@@ -182,7 +204,7 @@ const Register = () => {
                 <input
                   type="text"
                   name="name"
-                  className="form-control"
+                  className={`form-control ${fieldErrors.name ? 'is-invalid' : ''}`}
                   style={{ paddingLeft: '2.75rem' }}
                   placeholder="E.g., Radha Devi"
                   value={formData.name}
@@ -190,6 +212,7 @@ const Register = () => {
                   required
                 />
               </div>
+              {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>
 
             <div className="form-group">
@@ -201,7 +224,7 @@ const Register = () => {
                 <input
                   type="email"
                   name="email"
-                  className="form-control"
+                  className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
                   style={{ paddingLeft: '2.75rem' }}
                   placeholder="radha@gmail.com"
                   value={formData.email}
@@ -209,6 +232,7 @@ const Register = () => {
                   required
                 />
               </div>
+              {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
             </div>
 
             <div className="form-group">
@@ -220,14 +244,24 @@ const Register = () => {
                 <input
                   type="tel"
                   name="phone"
-                  className="form-control"
+                  maxLength="10"
+                  className={`form-control ${fieldErrors.phone ? 'is-invalid' : ''}`}
                   style={{ paddingLeft: '2.75rem' }}
-                  placeholder="10-digit number"
+                  placeholder="10-digit mobile number"
                   value={formData.phone}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const onlyNums = e.target.value.replace(/\D/g, '');
+                    setFormData(prev => ({ ...prev, phone: onlyNums }));
+                    if (fieldErrors.phone) setFieldErrors(prev => ({ ...prev, phone: null }));
+                  }}
                   required
                 />
               </div>
+              {fieldErrors.phone ? (
+                <div className="field-error">{fieldErrors.phone}</div>
+              ) : (
+                <small className="field-hint">Must be a 10-digit number starting with 6-9</small>
+              )}
             </div>
 
             <div className="form-group">
@@ -239,7 +273,7 @@ const Register = () => {
                 <input
                   type="password"
                   name="password"
-                  className="form-control"
+                  className={`form-control ${fieldErrors.password ? 'is-invalid' : ''}`}
                   style={{ paddingLeft: '2.75rem' }}
                   placeholder="Minimum 6 characters"
                   value={formData.password}
@@ -247,6 +281,7 @@ const Register = () => {
                   required
                 />
               </div>
+              {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
             </div>
 
             <div className="form-group">
@@ -260,7 +295,7 @@ const Register = () => {
               ) : (
                 <select
                   name="nhgId"
-                  className="form-control form-select"
+                  className={`form-control form-select ${fieldErrors.nhgId ? 'is-invalid' : ''}`}
                   value={formData.nhgId}
                   onChange={handleChange}
                   required
@@ -272,6 +307,7 @@ const Register = () => {
                   ))}
                 </select>
               )}
+              {fieldErrors.nhgId && <div className="field-error">{fieldErrors.nhgId}</div>}
             </div>
 
             <button

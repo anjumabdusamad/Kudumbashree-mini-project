@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, Mail, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { validateEmail } from '../utils/validators';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -24,16 +25,26 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      setErrMessage('Please fill in all fields');
+    setErrMessage('');
+
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      setErrMessage('Please enter both email address and password');
       return;
     }
 
-    setErrMessage('');
+    const emailErr = validateEmail(cleanEmail);
+    if (emailErr) {
+      setErrMessage(emailErr);
+      return;
+    }
+
     setLoadingLocal(true);
 
     try {
-      const user = await login(email, password);
+      const user = await login(cleanEmail, cleanPassword);
       if (user.role === 'admin') {
         navigate('/admin');
       } else {
