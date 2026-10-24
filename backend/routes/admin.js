@@ -60,13 +60,36 @@ router.put('/users/:id/status', async (req, res) => {
 router.post('/members/create', async (req, res) => {
   const { name, email, password, phone, nhgId } = req.body;
 
-  if (!name || !email || !password || !phone) {
+  const cleanName = (name || '').trim();
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const cleanPhone = (phone || '').trim();
+  const cleanPassword = (password || '').trim();
+
+  if (!cleanName || !cleanEmail || !cleanPassword || !cleanPhone) {
     return res.status(400).json({ success: false, message: 'Please provide all details' });
+  }
+
+  if (cleanName.length < 2) {
+    return res.status(400).json({ success: false, message: 'Name must be at least 2 characters long' });
+  }
+
+  const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
+  if (!emailRegex.test(cleanEmail)) {
+    return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+  }
+
+  const phoneRegex = /^[6-9]\d{9}$/;
+  if (!phoneRegex.test(cleanPhone)) {
+    return res.status(400).json({ success: false, message: 'Please provide a valid 10-digit mobile number starting with 6, 7, 8, or 9' });
+  }
+
+  if (cleanPassword.length < 6) {
+    return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long' });
   }
 
   try {
     // Check if email already taken
-    const emailExists = await User.findOne({ email });
+    const emailExists = await User.findOne({ email: cleanEmail });
     if (emailExists) {
       return res.status(400).json({ success: false, message: 'User with this email already exists' });
     }
@@ -83,10 +106,10 @@ router.post('/members/create', async (req, res) => {
 
     // Create user pre-approved and pre-verified
     const user = await User.create({
-      name,
-      email,
-      password,
-      phone,
+      name: cleanName,
+      email: cleanEmail,
+      password: cleanPassword,
+      phone: cleanPhone,
       role: 'member',
       nhg: assignedNhg,
       status: 'approved',
@@ -115,7 +138,7 @@ router.post('/members/create', async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    res.status(500).json({ success: false, message: error.message || 'Server Error' });
   }
 });
 
@@ -125,21 +148,38 @@ router.post('/members/create', async (req, res) => {
 router.post('/nhgs', async (req, res) => {
   const { name, code, location } = req.body;
 
-  if (!name || !code || !location) {
+  const cleanName = (name || '').trim();
+  const cleanCode = (code || '').trim().toUpperCase();
+  const cleanLocation = (location || '').trim();
+
+  if (!cleanName || !cleanCode || !cleanLocation) {
     return res.status(400).json({ success: false, message: 'Please add all required fields' });
   }
 
+  if (cleanName.length < 3) {
+    return res.status(400).json({ success: false, message: 'NHG name must be at least 3 characters long' });
+  }
+
+  const codeRegex = /^[A-Z0-9_-]{2,15}$/;
+  if (!codeRegex.test(cleanCode)) {
+    return res.status(400).json({ success: false, message: 'NHG code must be 2-15 alphanumeric characters without spaces' });
+  }
+
+  if (cleanLocation.length < 3) {
+    return res.status(400).json({ success: false, message: 'Location must be at least 3 characters long' });
+  }
+
   try {
-    const nhgExists = await NHG.findOne({ $or: [{ name }, { code }] });
+    const nhgExists = await NHG.findOne({ $or: [{ name: cleanName }, { code: cleanCode }] });
     if (nhgExists) {
       return res.status(400).json({ success: false, message: 'NHG with this name or code already exists' });
     }
 
-    const nhg = await NHG.create({ name, code, location });
+    const nhg = await NHG.create({ name: cleanName, code: cleanCode, location: cleanLocation });
     res.status(201).json({ success: true, nhg });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    res.status(500).json({ success: false, message: error.message || 'Server Error' });
   }
 });
 

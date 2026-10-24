@@ -15,8 +15,20 @@ router.use(protect);
 router.post('/', async (req, res) => {
   const { amount, purpose, durationMonths } = req.body;
 
-  if (!amount || !purpose || !durationMonths) {
-    return res.status(400).json({ success: false, message: 'Please provide amount, purpose, and duration' });
+  const numAmount = Number(amount);
+  const numDuration = parseInt(durationMonths, 10);
+  const cleanPurpose = (purpose || '').trim();
+
+  if (!amount || isNaN(numAmount) || numAmount < 500 || numAmount > 500000) {
+    return res.status(400).json({ success: false, message: 'Loan amount must be between ₹500 and ₹5,00,000' });
+  }
+
+  if (!durationMonths || isNaN(numDuration) || numDuration < 1 || numDuration > 60) {
+    return res.status(400).json({ success: false, message: 'Loan duration must be between 1 and 60 months' });
+  }
+
+  if (!cleanPurpose || cleanPurpose.length < 3) {
+    return res.status(400).json({ success: false, message: 'Please specify loan purpose with at least 3 characters' });
   }
 
   if (!req.user.nhg) {
@@ -39,17 +51,17 @@ router.post('/', async (req, res) => {
 
     const interestRate = 4; // 4% standard annual interest
     // Math: totalInterest = Principal * rate% * (months / 12)
-    const totalInterest = Number(amount) * (interestRate / 100) * (Number(durationMonths) / 12);
-    const totalPayable = Number(amount) + totalInterest;
-    const monthlyInstallment = Math.round(totalPayable / Number(durationMonths));
+    const totalInterest = numAmount * (interestRate / 100) * (numDuration / 12);
+    const totalPayable = numAmount + totalInterest;
+    const monthlyInstallment = Math.round(totalPayable / numDuration);
 
     const loan = await Loan.create({
       user: req.user.id,
       nhg: req.user.nhg,
-      amount: Number(amount),
-      purpose,
+      amount: numAmount,
+      purpose: cleanPurpose,
       interestRate,
-      durationMonths: Number(durationMonths),
+      durationMonths: numDuration,
       monthlyInstallment,
       remainingAmount: Math.round(totalPayable),
       status: 'pending',
@@ -182,8 +194,9 @@ router.put('/:id/status', authorize('admin'), async (req, res) => {
 router.post('/:id/repay', async (req, res) => {
   const { amount, reference } = req.body;
 
-  if (!amount || Number(amount) <= 0) {
-    return res.status(400).json({ success: false, message: 'Please specify a valid payment amount' });
+  const numAmount = Number(amount);
+  if (!amount || isNaN(numAmount) || numAmount <= 0) {
+    return res.status(400).json({ success: false, message: 'Please specify a valid payment amount greater than ₹0' });
   }
 
   try {

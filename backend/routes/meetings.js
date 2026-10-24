@@ -15,8 +15,24 @@ router.use(protect);
 router.post('/', async (req, res) => {
   const { nhgId, date, time, venue, agenda } = req.body;
 
-  if (!nhgId || !date || !time || !venue || !agenda) {
+  const cleanVenue = (venue || '').trim();
+  const cleanAgenda = (agenda || '').trim();
+  const cleanTime = (time || '').trim();
+
+  if (!nhgId || !date || !cleanTime || !cleanVenue || !cleanAgenda) {
     return res.status(400).json({ success: false, message: 'Please add all required fields' });
+  }
+
+  if (isNaN(new Date(date).getTime())) {
+    return res.status(400).json({ success: false, message: 'Please provide a valid meeting date' });
+  }
+
+  if (cleanVenue.length < 2) {
+    return res.status(400).json({ success: false, message: 'Venue must be at least 2 characters long' });
+  }
+
+  if (cleanAgenda.length < 3) {
+    return res.status(400).json({ success: false, message: 'Agenda must be at least 3 characters long' });
   }
 
   try {

@@ -28,18 +28,48 @@ router.get('/', async (req, res) => {
 router.post('/', authorize('admin'), async (req, res) => {
   const { title, description, trainer, date, venue, capacity } = req.body;
 
-  if (!title || !description || !trainer || !date || !venue || !capacity) {
+  const cleanTitle = (title || '').trim();
+  const cleanDescription = (description || '').trim();
+  const cleanTrainer = (trainer || '').trim();
+  const cleanVenue = (venue || '').trim();
+  const numCapacity = parseInt(capacity, 10);
+
+  if (!cleanTitle || !cleanDescription || !cleanTrainer || !date || !cleanVenue || !capacity) {
     return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+  }
+
+  if (cleanTitle.length < 3) {
+    return res.status(400).json({ success: false, message: 'Training title must be at least 3 characters long' });
+  }
+
+  if (cleanDescription.length < 5) {
+    return res.status(400).json({ success: false, message: 'Description must be at least 5 characters long' });
+  }
+
+  if (cleanTrainer.length < 2) {
+    return res.status(400).json({ success: false, message: 'Trainer name must be at least 2 characters long' });
+  }
+
+  if (isNaN(new Date(date).getTime())) {
+    return res.status(400).json({ success: false, message: 'Please provide a valid training date' });
+  }
+
+  if (cleanVenue.length < 2) {
+    return res.status(400).json({ success: false, message: 'Venue must be at least 2 characters long' });
+  }
+
+  if (isNaN(numCapacity) || numCapacity < 1) {
+    return res.status(400).json({ success: false, message: 'Capacity must be at least 1 participant' });
   }
 
   try {
     const training = await Training.create({
-      title,
-      description,
-      trainer,
+      title: cleanTitle,
+      description: cleanDescription,
+      trainer: cleanTrainer,
       date,
-      venue,
-      capacity: Number(capacity),
+      venue: cleanVenue,
+      capacity: numCapacity,
     });
 
     // Create broadcast notification for everyone

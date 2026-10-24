@@ -15,8 +15,14 @@ router.use(protect);
 router.post('/', async (req, res) => {
   const { items, shippingAddress, paymentMethod } = req.body; // items: [{ productId, quantity }]
 
-  if (!items || !Array.isArray(items) || items.length === 0 || !shippingAddress) {
-    return res.status(400).json({ success: false, message: 'Please provide items and shipping address' });
+  const cleanAddress = (shippingAddress || '').trim();
+
+  if (!items || !Array.isArray(items) || items.length === 0 || !cleanAddress) {
+    return res.status(400).json({ success: false, message: 'Please provide items and a shipping address' });
+  }
+
+  if (cleanAddress.length < 10) {
+    return res.status(400).json({ success: false, message: 'Please provide a complete delivery address (at least 10 characters)' });
   }
 
   try {
@@ -31,25 +37,30 @@ router.post('/', async (req, res) => {
 
     // 1. Check stocks and calculate total
     for (const item of items) {
+      const qty = parseInt(item.quantity, 10);
+      if (isNaN(qty) || qty < 1) {
+        return res.status(400).json({ success: false, message: 'Each order item quantity must be at least 1' });
+      }
+
       const product = await Product.findById(item.productId);
       if (!product) {
         return res.status(404).json({ success: false, message: `Product ${item.productId} not found` });
       }
 
-      if (product.stock < item.quantity) {
+      if (product.stock < qty) {
         return res.status(400).json({
           success: false,
-          message: `Insufficient stock for product ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`,
+          message: `Insufficient stock for product ${product.name}. Available: ${product.stock}, Requested: ${qty}`,
         });
       }
 
-      totalAmount += product.price * item.quantity;
+      totalAmount += product.price * qty;
       orderItems.push({
         product: product._id,
-        quantity: item.quantity,
+        quantity: qty,
         price: product.price,
       });
-      productsToUpdate.push({ product, quantity: item.quantity });
+      productsToUpdate.push({ product, quantity: qty });
     }
 
     // 2. Validate wallet balance if paying with wallet

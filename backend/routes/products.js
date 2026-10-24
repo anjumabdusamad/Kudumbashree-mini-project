@@ -47,8 +47,29 @@ router.get('/:id', async (req, res) => {
 router.post('/', protect, async (req, res) => {
   const { name, description, price, image, category, stock, nhgId } = req.body;
 
-  if (!name || !description || !price || !category) {
+  const cleanName = (name || '').trim();
+  const cleanDescription = (description || '').trim();
+  const numPrice = Number(price);
+  const numStock = stock !== undefined ? Number(stock) : 10;
+
+  if (!cleanName || !cleanDescription || !price || !category) {
     return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+  }
+
+  if (cleanName.length < 2) {
+    return res.status(400).json({ success: false, message: 'Product name must be at least 2 characters long' });
+  }
+
+  if (cleanDescription.length < 5) {
+    return res.status(400).json({ success: false, message: 'Product description must be at least 5 characters long' });
+  }
+
+  if (isNaN(numPrice) || numPrice <= 0) {
+    return res.status(400).json({ success: false, message: 'Price must be a valid number greater than ₹0' });
+  }
+
+  if (isNaN(numStock) || numStock < 0 || !Number.isInteger(numStock)) {
+    return res.status(400).json({ success: false, message: 'Stock must be a non-negative whole number' });
   }
 
   try {
@@ -67,19 +88,19 @@ router.post('/', protect, async (req, res) => {
     }
 
     const product = await Product.create({
-      name,
-      description,
-      price: Number(price),
-      image: image || undefined,
+      name: cleanName,
+      description: cleanDescription,
+      price: numPrice,
+      image: image ? image.trim() : undefined,
       category,
-      stock: stock ? Number(stock) : undefined,
+      stock: numStock,
       nhg: productNhgId,
     });
 
     res.status(201).json({ success: true, product });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    res.status(500).json({ success: false, message: error.message || 'Server Error' });
   }
 });
 
@@ -108,12 +129,45 @@ router.put('/:id', protect, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to update this product' });
     }
 
-    if (name) product.name = name;
-    if (description) product.description = description;
-    if (price) product.price = Number(price);
-    if (image) product.image = image;
-    if (category) product.category = category;
-    if (stock !== undefined) product.stock = Number(stock);
+    if (name !== undefined) {
+      const cleanName = name.trim();
+      if (cleanName.length < 2) {
+        return res.status(400).json({ success: false, message: 'Product name must be at least 2 characters long' });
+      }
+      product.name = cleanName;
+    }
+
+    if (description !== undefined) {
+      const cleanDesc = description.trim();
+      if (cleanDesc.length < 5) {
+        return res.status(400).json({ success: false, message: 'Product description must be at least 5 characters long' });
+      }
+      product.description = cleanDesc;
+    }
+
+    if (price !== undefined) {
+      const numPrice = Number(price);
+      if (isNaN(numPrice) || numPrice <= 0) {
+        return res.status(400).json({ success: false, message: 'Price must be a valid number greater than ₹0' });
+      }
+      product.price = numPrice;
+    }
+
+    if (image !== undefined) {
+      product.image = image ? image.trim() : product.image;
+    }
+
+    if (category !== undefined) {
+      product.category = category;
+    }
+
+    if (stock !== undefined) {
+      const numStock = Number(stock);
+      if (isNaN(numStock) || numStock < 0 || !Number.isInteger(numStock)) {
+        return res.status(400).json({ success: false, message: 'Stock must be a non-negative whole number' });
+      }
+      product.stock = numStock;
+    }
 
     await product.save();
 

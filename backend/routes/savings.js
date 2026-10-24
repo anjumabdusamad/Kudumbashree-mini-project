@@ -14,8 +14,13 @@ router.use(protect);
 router.post('/', async (req, res) => {
   const { userId, amount, description, date } = req.body;
 
+  const numAmount = Number(amount);
   if (!userId || !amount) {
     return res.status(400).json({ success: false, message: 'Please provide member ID and savings amount' });
+  }
+
+  if (isNaN(numAmount) || numAmount <= 0) {
+    return res.status(400).json({ success: false, message: 'Savings amount must be a valid number greater than ₹0' });
   }
 
   try {

@@ -26,17 +26,38 @@ router.get('/', async (req, res) => {
 router.post('/', authorize('admin'), async (req, res) => {
   const { title, description, eligibility, benefits, applicationLink } = req.body;
 
-  if (!title || !description || !eligibility || !benefits) {
+  const cleanTitle = (title || '').trim();
+  const cleanDescription = (description || '').trim();
+  const cleanEligibility = (eligibility || '').trim();
+  const cleanBenefits = (benefits || '').trim();
+
+  if (!cleanTitle || !cleanDescription || !cleanEligibility || !cleanBenefits) {
     return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+  }
+
+  if (cleanTitle.length < 3) {
+    return res.status(400).json({ success: false, message: 'Scheme title must be at least 3 characters long' });
+  }
+
+  if (cleanDescription.length < 5) {
+    return res.status(400).json({ success: false, message: 'Description must be at least 5 characters long' });
+  }
+
+  if (cleanEligibility.length < 3) {
+    return res.status(400).json({ success: false, message: 'Eligibility criteria must be at least 3 characters long' });
+  }
+
+  if (cleanBenefits.length < 3) {
+    return res.status(400).json({ success: false, message: 'Benefits must be at least 3 characters long' });
   }
 
   try {
     const scheme = await Scheme.create({
-      title,
-      description,
-      eligibility,
-      benefits,
-      applicationLink,
+      title: cleanTitle,
+      description: cleanDescription,
+      eligibility: cleanEligibility,
+      benefits: cleanBenefits,
+      applicationLink: applicationLink ? applicationLink.trim() : '',
     });
 
     // Create broadcast notification

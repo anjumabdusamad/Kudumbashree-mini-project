@@ -67,6 +67,34 @@ const generateToken = (id) => {
 router.post('/register', async (req, res) => {
   const { name, email, password, phone, role, nhgId, adminSecret } = req.body;
 
+  const cleanName = (name || '').trim();
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const cleanPhone = (phone || '').trim();
+  const cleanPassword = (password || '').trim();
+
+  // Basic field validations
+  if (!cleanName || !cleanEmail || !cleanPhone || !cleanPassword) {
+    return res.status(400).json({ success: false, message: 'Please fill in all general fields' });
+  }
+
+  if (cleanName.length < 2) {
+    return res.status(400).json({ success: false, message: 'Name must be at least 2 characters long' });
+  }
+
+  const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
+  if (!emailRegex.test(cleanEmail)) {
+    return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+  }
+
+  const phoneRegex = /^[6-9]\d{9}$/;
+  if (!phoneRegex.test(cleanPhone)) {
+    return res.status(400).json({ success: false, message: 'Please provide a valid 10-digit mobile number starting with 6, 7, 8, or 9' });
+  }
+
+  if (cleanPassword.length < 6) {
+    return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long' });
+  }
+
   try {
     // 1. Secret validations first
     let userRole = 'member';
@@ -102,25 +130,25 @@ router.post('/register', async (req, res) => {
     }
 
     // 2. Check duplicate / unverified user
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email: cleanEmail });
     if (user) {
       if (user.isVerified) {
         return res.status(400).json({ success: false, message: 'User already exists with this email' });
       }
       
       // Update unverified user details
-      user.name = name;
-      user.password = password; // pre-save pre hook will hash password
-      user.phone = phone;
+      user.name = cleanName;
+      user.password = cleanPassword; // pre-save pre hook will hash password
+      user.phone = cleanPhone;
       user.role = userRole;
       user.nhg = assignedNhg;
     } else {
       // Create new unverified user
       user = new User({
-        name,
-        email,
-        password,
-        phone,
+        name: cleanName,
+        email: cleanEmail,
+        password: cleanPassword,
+        phone: cleanPhone,
         role: userRole,
         nhg: assignedNhg,
         isVerified: false,
@@ -232,14 +260,22 @@ router.post('/verify-otp', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const cleanPassword = (password || '').trim();
+
   // Validate email & password
-  if (!email || !password) {
+  if (!cleanEmail || !cleanPassword) {
     return res.status(400).json({ success: false, message: 'Please provide email and password' });
+  }
+
+  const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
+  if (!emailRegex.test(cleanEmail)) {
+    return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
   }
 
   try {
     // Check for user
-    const user = await User.findOne({ email }).select('+password').populate('nhg', 'name code');
+    const user = await User.findOne({ email: cleanEmail }).select('+password').populate('nhg', 'name code');
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
@@ -254,7 +290,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Check if password matches
-    const isMatch = await user.matchPassword(password);
+    const isMatch = await user.matchPassword(cleanPassword);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
@@ -328,18 +364,46 @@ router.put('/update-profile', protect, async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Update fields
-    if (name) user.name = name;
-    if (email) {
-      // Check if email already taken
-      const emailExists = await User.findOne({ email, _id: { $ne: user._id } });
-      if (emailExists) {
-        return res.status(400).json({ success: false, message: 'Email already in use' });
+    // Validate and update fields
+    if (name !== undefined) {
+      const cleanName = name.trim();
+      if (cleanName.length < 2) {
+        return res.status(400).json({ success: false, message: 'Name must be at least 2 characters long' });
       }
-      user.email = email;
+      user.name = cleanName;
     }
-    if (phone) user.phone = phone;
-    if (password) user.password = password; // pre-save hook will hash it
+
+    if (email !== undefined) {
+      const cleanEmail = email.trim().toLowerCase();
+      const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+      }
+
+      // Check if email already taken
+      const emailExists = await User.findOne({ email: cleanEmail, _id: { $ne: user._id } });
+      if (emailExists) {
+        return res.status(400).json({ success: false, message: 'Email is already in use by another account' });
+      }
+      user.email = cleanEmail;
+    }
+
+    if (phone !== undefined) {
+      const cleanPhone = phone.trim();
+      const phoneRegex = /^[6-9]\d{9}$/;
+      if (!phoneRegex.test(cleanPhone)) {
+        return res.status(400).json({ success: false, message: 'Please provide a valid 10-digit mobile number starting with 6, 7, 8, or 9' });
+      }
+      user.phone = cleanPhone;
+    }
+
+    if (password) {
+      const cleanPassword = password.trim();
+      if (cleanPassword.length < 6) {
+        return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long' });
+      }
+      user.password = cleanPassword; // pre-save hook will hash it
+    }
 
     await user.save();
 
